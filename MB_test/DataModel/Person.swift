@@ -9,6 +9,7 @@
 import Foundation
 import UIKit
 import SwiftyJSON
+
 class Person{
     let id:Int
     let name:String
@@ -16,17 +17,12 @@ class Person{
     let species:String
     let type:String
     let gender:String
-    let location: (name:String, url:String)
+    let location: String
     let image:UIImage?
-    let episode:[String]
+    let episode:Int
     let url:String
-    let created:Date
-    
-    enum SerializationError: Error {
-        case missing(String)
-        case invalid(String, Any)
-    }
-    
+    let created:String
+
     init?(json: JSON) throws {
         
         guard let id = json["id"].int else {
@@ -62,16 +58,15 @@ class Person{
         }
         
         guard let locationJSON = json["location"].dictionary,
-            let locationName = locationJSON["name"]?.stringValue,
-            let locationUrl = locationJSON["url"]?.string
+            let locationName = locationJSON["name"]?.stringValue
             else{
                 print("Have not 'location'")
                 return nil
         }
-        let location = (locationName, locationUrl)
+        let location = locationName
         
         
-        guard let episode = json["episode"].arrayObject as? [String] else{
+        guard let episodesCount = json["episode"].arrayObject?.count else{
             print("Have not 'episode'")
             return nil
         }
@@ -86,18 +81,31 @@ class Person{
             return nil
         }
         
-        let date = Date(timeIntervalSince1970: 1212121)
         self.id = id
-        self.name = name
-        self.status = status
+        self.name = name != "" ? name : "unknown"
+        self.status = status == "" ? "unkown": status
         self.species = species
-        self.type = type
+        self.type = type == "" ? "unkown": type
         self.gender = gender
         self.location = location
         self.image = image
-        self.episode = episode
+        self.episode = episodesCount
         self.url = url
-        self.created = date
+        self.created = dateString
+    }
+    
+    init(personFromDB:PersonCD){
+        self.id = Int(personFromDB.id)
+        self.name = personFromDB.name!
+        self.species = personFromDB.species!
+        self.status = personFromDB.status!
+        self.type = personFromDB.type!
+        self.gender = personFromDB.gender!
+        self.location = personFromDB.location!
+        self.image = UIImage(data: personFromDB.image!)
+        self.episode = Int(personFromDB.episode)
+        self.url = personFromDB.url!
+        self.created = personFromDB.created!
     }
     
 }

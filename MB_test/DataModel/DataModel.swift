@@ -9,27 +9,45 @@
 import Foundation
 import UIKit
 import SwiftyJSON
+import CoreData
+
 class DataModel {
     
     var persons = [Person]()
     var json:JSON!
+    let pageIndex = 1
+    
+    var isDataLoaded:Bool{
+        get {
+            return UserDefaults.standard.bool(forKey: "isDataLoaded")
+        }
+        set {
+            UserDefaults.standard.set(newValue, forKey: "isDataLoaded")
+        }
+    }
+    
     init(){
         loadPersons()
-        //loading persons from storage
+    }
+
+    // Loading persons
+    func loadPersons(){
+        let utilityQueue = DispatchQueue.global(qos: .utility)
+        utilityQueue.sync {
+            if !isDataLoaded {
+                getDataJSON(for: pageIndex)
+                getPersonsFrom(json: json)
+                savePersons()
+                isDataLoaded = true
+            }
+            else
+            {
+                loadPersonsFromDB()
+            }
+        }
     }
     
-    func downloadImage(from url:URL) -> UIImage?{
-        var image:UIImage?
-        if let data = try? Data(contentsOf: url){
-                image = UIImage(data: data)
-        }
-        else{
-            print("Can not download image from \(url.absoluteString)")
-        }
-        return image
-    }
-    
-    // Получение данных с сайта в формате JSON
+    // Fetching data from network in JSON format
     func getDataJSON(for pageIndex:Int) {
         let baseURL = "https://rickandmortyapi.com/api/character/"
         let Url = URL(string: baseURL + "?page=\(pageIndex)")!
@@ -37,9 +55,8 @@ class DataModel {
         
         let task = URLSession.shared.dataTask(with: Url) {(data, response, error) in
             guard let data = data else { return }
-
+            
             if let datajson = try? JSON(data: data){
-                print("JSON page = \(pageIndex) did downloaded")
                 self.json = datajson
                 semaphore.signal()
             }
@@ -48,7 +65,7 @@ class DataModel {
         task.resume()
         semaphore.wait()
     }
-    
+    // Creating persons
     func getPersonsFrom(json:JSON){
         var downloadedPersons = [Person]()
         if let personsJSON = json["results"].array {
@@ -56,7 +73,6 @@ class DataModel {
                 if let person = try? Person(json: element){
                     downloadedPersons.append(person)
                 }else{
-                    print("Init for \(element["name"]) failed")
                     return
                 }
             }
@@ -65,20 +81,63 @@ class DataModel {
         else{
             print("Error with 'result' from JSON")
         }
-        
     }
     
-    func loadPersons(){
-        let utilityQueue = DispatchQueue.global(qos: .utility)
-        utilityQueue.sync {
-            getDataJSON(for: 1)
-            getPersonsFrom(json: self.json)
-        }
-        // Loads persons from file
-    }
+
     
+    //Saving persons to file
     func savePersons(){
-        //Saves persons to file
+        guard let appDelegate =
+            UIApplication.shared.delegate as? AppDelegate else {
+                return
+        }
+        let context = appDelegate.persistentContainer.viewContext
+        let entity = NSEntityDescription.entity(forEntityName: "PersonCD", in: context)!
+        
+        for person in persons {
+            let newPerson = NSManagedObject(entity: entity, insertInto: context)
+            newPerson.setValue(person.id, forKey: "id")
+            newPerson.setValue(person.created, forKey: "created")
+            newPerson.setValue(person.episode, forKey: "episode")
+            newPerson.setValue(person.gender, forKey: "gender")
+            newPerson.setValue(person.image?.pngData(), forKey: "image")
+            newPerson.setValue(person.name, forKey: "name")
+            newPerson.setValue(person.location, forKey: "location")
+            newPerson.setValue(person.species, forKey: "species")
+            newPerson.setValue(person.status, forKey: "status")
+            newPerson.setValue(person.type, forKey: "type")
+            newPerson.setValue(person.url, forKey: "url")
+            
+            do {
+                try context.save()
+            } catch {
+                print("Failed saving '\(person.name)'")
+            }
+            
+        }
+        print("All characters was saved")
     }
+    
+    func loadPersonsFromDB(){
+        guard let appDelegate =
+            UIApplication.shared.delegate as? AppDelegate else {
+                return
+        }
+        let context = appDelegate.persistentContainer.viewContext
+        let request = NSFetchRequest<NSFetchRequestResult>(entityName: "PersonCD")
+        do {
+            var downloadedPersons = [Person]()
+            let results = try context.fetch(request) as! [PersonCD]
+            for result in results {
+                let person = Person(personFromDB: result)
+                downloadedPersons.append(person)
+          }
+            persons = downloadedPersons
+        } catch {
+            print("Failed")
+        }
+    }
+    
+    
     
 }

@@ -11,13 +11,15 @@ import CoreData
 
 @UIApplicationMain
 class AppDelegate: UIResponder, UIApplicationDelegate {
-    var dataModel = DataModel()
-
+    var dataModel:DataModel!
+    
     var window: UIWindow?
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
         // Override point for customization after application launch.
-        let controller = window!.rootViewController as! TableViewController
-        controller.dataModel = dataModel
+        let navController = window?.rootViewController as! UINavigationController
+        let destination = navController.viewControllers.first as! PersonsTableVC
+        dataModel = DataModel()
+        destination.dataModel = dataModel
         return true
     }
 
@@ -79,6 +81,10 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
             }
         }
     }
+    
+    
+    
+
 
 }
 
