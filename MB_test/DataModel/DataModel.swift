@@ -32,7 +32,7 @@ class DataModel {
 
     // Loading persons
     func loadPersons(){
-        let utilityQueue = DispatchQueue.global(qos: .utility)
+        let utilityQueue = DispatchQueue.global(qos: .userInitiated)
         utilityQueue.sync {
             if !isDataLoaded {
                 getDataJSON(for: pageIndex)

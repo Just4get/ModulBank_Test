@@ -52,7 +52,7 @@ class Person{
         
         guard let imageURLString = json["image"].string,
             let imageURL = URL(string:imageURLString),
-            let image = downloadImage(from: imageURL) else{
+            let image = Person.downloadImage(from: imageURL) else{
                 print("Have not 'image'")
                 return nil
         }
@@ -108,15 +108,17 @@ class Person{
         self.created = personFromDB.created!
     }
     
+    static func downloadImage(from url:URL) -> UIImage?{
+        var image:UIImage?
+        if let data = try? Data(contentsOf: url){
+            image = UIImage(data: data)
+        }
+        else{
+            print("Can not download image from \(url.absoluteString)")
+        }
+        return image
+    }
+    
 }
 
-func downloadImage(from url:URL) -> UIImage?{
-    var image:UIImage?
-    if let data = try? Data(contentsOf: url){
-        image = UIImage(data: data)
-    }
-    else{
-        print("Can not download image from \(url.absoluteString)")
-    }
-    return image
-}
+

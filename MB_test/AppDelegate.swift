@@ -18,6 +18,8 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         // Override point for customization after application launch.
         let navController = window?.rootViewController as! UINavigationController
         let destination = navController.viewControllers.first as! PersonsTableVC
+       
+        
         dataModel = DataModel()
         destination.dataModel = dataModel
         return true
